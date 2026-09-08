@@ -11,7 +11,13 @@ import {
   Clock,
   GitBranch,
   Terminal,
-  ExternalLink
+  ExternalLink,
+  Flame,
+  Coffee,
+  Zap,
+  Rocket,
+  MessageSquareQuote,
+  Utensils
 } from 'lucide-react';
 import './App.css';
 
@@ -20,16 +26,25 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export default function App() {
   const [items, setItems] = useState([]);
+  const [vibes, setVibes] = useState([]);
+  const [activeTab, setActiveTab] = useState('items'); // 'items' | 'vibes'
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [health, setHealth] = useState({ status: 'connecting', database: 'checking...' });
   const [dbInfo, setDbInfo] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Form State
+  // Main Item Form State
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Frontend');
+  const [chaosRating, setChaosRating] = useState('Mild 🌶️');
   const [description, setDescription] = useState('');
+
+  // Team Member Vibe Station Form State (developer_vibes table)
+  const [coderName, setCoderName] = useState('Joseph Sackitey');
+  const [vibeStatus, setVibeStatus] = useState('🚀 Hype Train');
+  const [snackFuel, setSnackFuel] = useState('☕ Cold Brew & Gummy Bears');
+  const [hypeQuote, setHypeQuote] = useState('It worked on my machine, shipping to prod!');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -75,10 +90,25 @@ export default function App() {
     }
   };
 
+  const fetchVibes = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/items/vibes`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setVibes(result.data || []);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load developer vibes:', err.message);
+    }
+  };
+
   useEffect(() => {
     fetchHealth();
     fetchDbInfo();
     fetchItems();
+    fetchVibes();
 
     // Heartbeat check every 15 seconds
     const interval = setInterval(() => {
@@ -102,7 +132,12 @@ export default function App() {
         body: JSON.stringify({
           title: title.trim(),
           category,
+          chaos_rating: chaosRating,
           description: description.trim(),
+          coder_name: coderName.trim(),
+          vibe_status: vibeStatus,
+          snack_fuel: snackFuel.trim(),
+          hype_quote: hypeQuote.trim(),
         }),
       });
 
@@ -111,10 +146,11 @@ export default function App() {
         throw new Error(result.error || `HTTP ${res.status}`);
       }
 
-      showToast(`Row #${result.data.id} inserted successfully into MySQL!`, 'success');
+      showToast(`🚀 Item #${result.data.item.id} & Vibe Log saved to MySQL!`, 'success');
       setTitle('');
       setDescription('');
       fetchItems();
+      fetchVibes();
       fetchDbInfo();
     } catch (err) {
       showToast(`Insert failed: ${err.message}`, 'error');
@@ -125,15 +161,67 @@ export default function App() {
 
   const handleFillSample = () => {
     const samples = [
-      { title: 'Setup GitHub Actions CI', category: 'DevOps', description: 'Automated testing and linting workflow on push.' },
-      { title: 'Add MySQL Table Migration', category: 'Database', description: 'Defined schema for user activity tracking.' },
-      { title: 'Deploy API to Railway', category: 'Backend', description: 'Configured environment variables and auto-deploy trigger.' },
-      { title: 'Build React Filter UI', category: 'Frontend', description: 'Added category selector and live search.' }
+      {
+        title: 'Zero Downtime MySQL Migration',
+        category: 'Database',
+        chaos: 'Spicy 🌶️🌶️',
+        desc: 'Added developer_vibes table and chaos rating with automated rollback support.',
+        coder: 'Joseph Sackitey',
+        vibe: '🚀 Hype Train',
+        snack: '🧋 Boba Milk Tea & Pocky',
+        quote: 'Migrations ran in 42ms. Pure magic!'
+      },
+      {
+        title: 'Auto-Scaling Express Backend on Railway',
+        category: 'DevOps',
+        chaos: 'Absolute Mayhem 💥',
+        desc: 'Provisioned container replicas under traffic spikes.',
+        coder: 'Captain Cloud',
+        vibe: '☕ Pure Caffeine',
+        snack: '⚡ Monster Energy & Doritos',
+        quote: 'No 502 Bad Gateways on my watch!'
+      },
+      {
+        title: 'Modern Glassmorphic React Dashboard',
+        category: 'Frontend',
+        chaos: 'Zen 🧘',
+        desc: 'Crafted responsive tabs, lively badges, and real-time schema inspector.',
+        coder: 'Joseph Sackitey',
+        vibe: '✨ Cloud Wizard',
+        snack: '🍕 Cold Pizza & Cold Brew',
+        quote: 'Clean CSS and zero layout shifts.'
+      },
+      {
+        title: 'Debugging Race Condition at 3 AM',
+        category: 'Backend',
+        chaos: 'Production Danger ☢️',
+        desc: 'Traced connection pool deadlock in async transaction wrapper.',
+        coder: 'Midnight Hacker',
+        vibe: '💀 3 AM Panic',
+        snack: '🍫 Dark Chocolate & Tears',
+        quote: 'It worked in production, please do not touch anything.'
+      }
     ];
+
     const picked = samples[Math.floor(Math.random() * samples.length)];
     setTitle(picked.title);
     setCategory(picked.category);
-    setDescription(picked.description);
+    setChaosRating(picked.chaos);
+    setDescription(picked.desc);
+    setCoderName(picked.coder);
+    setVibeStatus(picked.vibe);
+    setSnackFuel(picked.snack);
+    setHypeQuote(picked.quote);
+  };
+
+  const getChaosClass = (chaos) => {
+    if (!chaos) return 'mild';
+    const lower = chaos.toLowerCase();
+    if (lower.includes('zen')) return 'zen';
+    if (lower.includes('spicy')) return 'spicy';
+    if (lower.includes('mayhem')) return 'mayhem';
+    if (lower.includes('danger')) return 'danger';
+    return 'mild';
   };
 
   return (
@@ -157,7 +245,7 @@ export default function App() {
               Cloud <span>Collaborative Development</span>
             </h1>
             <p className="hero-subtitle">
-              Full-Stack Application with React, Node/Express, MySQL, Docker, and Automated Migrations.
+              Full-Stack Application with React, Node/Express, MySQL, Automated Migrations, & Developer Hype Station.
             </p>
           </div>
 
@@ -184,7 +272,11 @@ export default function App() {
           </div>
           <div className="meta-item">
             <Layers size={16} />
-            <span>Tables in DB: <strong>{dbInfo?.tables?.length ?? '1'}</strong></span>
+            <span>Tables in DB: <strong>{dbInfo?.tables?.length ?? '2'}</strong></span>
+          </div>
+          <div className="meta-item">
+            <Zap size={16} />
+            <span>Vibes Logged: <strong>{vibes.length}</strong></span>
           </div>
         </div>
       </header>
@@ -199,16 +291,19 @@ export default function App() {
                 <PlusCircle size={20} />
               </div>
               <div>
-                <h2 className="card-title">Insert Record</h2>
-                <span className="card-subtitle">Adds a new row to the MySQL <code>items</code> table</span>
+                <h2 className="card-title">Insert Record & Log Vibe</h2>
+                <span className="card-subtitle">
+                  Saves to <code>items</code> &amp; <code>developer_vibes</code> tables
+                </span>
               </div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="item-form">
+            {/* Main Item Fields */}
             <div className="form-group">
               <label htmlFor="item-title">
-                Title <span className="required">*</span>
+                Task / Feature Title <span className="required">*</span>
               </label>
               <input
                 id="item-title"
@@ -221,20 +316,41 @@ export default function App() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="item-category">Category</label>
-              <select
-                id="item-category"
-                className="form-select"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="Frontend">Frontend</option>
-                <option value="Backend">Backend</option>
-                <option value="Database">Database</option>
-                <option value="DevOps">DevOps</option>
-                <option value="General">General</option>
-              </select>
+            <div className="vibe-grid-2">
+              <div className="form-group">
+                <label htmlFor="item-category">Category</label>
+                <select
+                  id="item-category"
+                  className="form-select"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="Frontend">Frontend</option>
+                  <option value="Backend">Backend</option>
+                  <option value="Database">Database</option>
+                  <option value="DevOps">DevOps</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="item-chaos">
+                  <span>Chaos Rating</span>
+                  <small style={{ color: '#c084fc' }}>+New Column</small>
+                </label>
+                <select
+                  id="item-chaos"
+                  className="form-select"
+                  value={chaosRating}
+                  onChange={(e) => setChaosRating(e.target.value)}
+                >
+                  <option value="Zen 🧘">Zen 🧘</option>
+                  <option value="Mild 🌶️">Mild 🌶️</option>
+                  <option value="Spicy 🌶️🌶️">Spicy 🌶️🌶️</option>
+                  <option value="Absolute Mayhem 💥">Absolute Mayhem 💥</option>
+                  <option value="Production Danger ☢️">Production Danger ☢️</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-group">
@@ -242,21 +358,92 @@ export default function App() {
               <textarea
                 id="item-desc"
                 className="form-textarea"
-                placeholder="Add details, notes, or teammate attribution..."
+                placeholder="Add implementation notes, architecture details..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+            </div>
+
+            {/* Teammate Vibe Station Subsection (developer_vibes table) */}
+            <div className="vibe-form-box">
+              <div className="vibe-form-title">
+                <Flame size={16} /> Teammate Vibe &amp; Snack Station
+                <small style={{ marginLeft: 'auto', color: '#94a3b8', textTransform: 'none', fontWeight: 400 }}>
+                  (<code>developer_vibes</code> table)
+                </small>
+              </div>
+
+              <div className="vibe-grid-2">
+                <div className="form-group">
+                  <label htmlFor="vibe-coder">Coder / Teammate</label>
+                  <input
+                    id="vibe-coder"
+                    type="text"
+                    className="form-input"
+                    value={coderName}
+                    onChange={(e) => setCoderName(e.target.value)}
+                    placeholder="e.g. Joseph Sackitey"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="vibe-status">Current Vibe</label>
+                  <select
+                    id="vibe-status"
+                    className="form-select"
+                    value={vibeStatus}
+                    onChange={(e) => setVibeStatus(e.target.value)}
+                  >
+                    <option value="🚀 Hype Train">🚀 Hype Train</option>
+                    <option value="☕ Pure Caffeine">☕ Pure Caffeine</option>
+                    <option value="🍕 Pizza Mode">🍕 Pizza Mode</option>
+                    <option value="🧠 Galaxy Brain">🧠 Galaxy Brain</option>
+                    <option value="💀 3 AM Panic">💀 3 AM Panic</option>
+                    <option value="✨ Cloud Wizard">✨ Cloud Wizard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="vibe-snack">
+                  <span>Snack Fuel</span>
+                  <Utensils size={14} style={{ color: '#fbbf24' }} />
+                </label>
+                <input
+                  id="vibe-snack"
+                  type="text"
+                  className="form-input"
+                  value={snackFuel}
+                  onChange={(e) => setSnackFuel(e.target.value)}
+                  placeholder="e.g. Monster & Flamin' Hot Cheetos"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="vibe-quote">
+                  <span>Hype Battle Cry / Quote</span>
+                  <MessageSquareQuote size={14} style={{ color: '#818cf8' }} />
+                </label>
+                <input
+                  id="vibe-quote"
+                  type="text"
+                  className="form-input"
+                  value={hypeQuote}
+                  onChange={(e) => setHypeQuote(e.target.value)}
+                  placeholder="e.g. It worked on my machine, ship it!"
+                />
+              </div>
             </div>
 
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={submitting}>
                 {submitting ? (
                   <>
-                    <RefreshCw size={16} className="animate-spin" /> Inserting...
+                    <RefreshCw size={16} className="animate-spin" /> Saving Dual Records...
                   </>
                 ) : (
                   <>
-                    <PlusCircle size={16} /> Insert Into Database
+                    <Rocket size={16} /> Launch &amp; Boost Team Vibe!
                   </>
                 )}
               </button>
@@ -266,13 +453,13 @@ export default function App() {
                 className="btn-secondary"
                 onClick={handleFillSample}
               >
-                <Sparkles size={14} /> Fill Sample Data
+                <Sparkles size={14} /> 🎲 Random Vibe &amp; Snack Preset
               </button>
             </div>
           </form>
         </section>
 
-        {/* Right Column: Live Records Card */}
+        {/* Right Column: Live Records & Vibe Wall Card */}
         <section className="card records-container">
           <div className="card-header">
             <div className="card-title-group">
@@ -281,73 +468,142 @@ export default function App() {
               </div>
               <div>
                 <h2 className="card-title">Live Database Records</h2>
-                <span className="card-subtitle">Real-time rows fetched from MySQL <code>items</code> table</span>
+                <span className="card-subtitle">Real-time sync from MySQL tables</span>
               </div>
             </div>
 
-            <div className="records-meta-bar">
-              <span className="count-badge">{items.length} {items.length === 1 ? 'Record' : 'Records'}</span>
+            <div className="tab-group">
               <button
-                className="btn-secondary"
-                onClick={() => {
-                  fetchItems();
-                  fetchDbInfo();
-                  fetchHealth();
-                }}
-                title="Refresh Records"
+                className={`tab-btn ${activeTab === 'items' ? 'active' : ''}`}
+                onClick={() => setActiveTab('items')}
               >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                📦 Items ({items.length})
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'vibes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('vibes')}
+              >
+                ⚡ Vibe Wall ({vibes.length})
               </button>
             </div>
           </div>
 
-          {loading && items.length === 0 ? (
-            <div className="empty-state">
-              <RefreshCw size={32} className="animate-spin text-muted" />
-              <p>Fetching records from MySQL...</p>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="empty-state">
-              <Database size={40} className="empty-icon" />
-              <p>No records found in the database yet.</p>
-              <span className="card-subtitle">Use the form on the left to insert the first record!</span>
-            </div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ fontFamily: 'monospace', color: '#94a3b8' }}>#{item.id}</td>
-                      <td style={{ fontWeight: 600 }}>{item.title}</td>
-                      <td>
-                        <span className="tag-badge">{item.category || 'General'}</span>
-                      </td>
-                      <td style={{ color: '#cbd5e1', maxWidth: '280px' }}>
-                        {item.description || <span style={{ color: '#64748b' }}>—</span>}
-                      </td>
-                      <td style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                        {item.created_at ? new Date(item.created_at).toLocaleString() : 'Just now'}
-                      </td>
+          <div className="records-meta-bar">
+            <span className="count-badge">
+              {activeTab === 'items'
+                ? `${items.length} ${items.length === 1 ? 'Item' : 'Items'} in MySQL`
+                : `${vibes.length} ${vibes.length === 1 ? 'Vibe' : 'Vibes'} in MySQL`}
+            </span>
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                fetchItems();
+                fetchVibes();
+                fetchDbInfo();
+                fetchHealth();
+              }}
+              title="Refresh Records"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
+
+          {/* Tab 1: Main Items Table */}
+          {activeTab === 'items' && (
+            loading && items.length === 0 ? (
+              <div className="empty-state">
+                <RefreshCw size={32} className="animate-spin text-muted" />
+                <p>Fetching records from MySQL...</p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="empty-state">
+                <Database size={40} className="empty-icon" />
+                <p>No records found in the database yet.</p>
+                <span className="card-subtitle">Use the form on the left to insert the first record!</span>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Chaos Level</th>
+                      <th>Description</th>
+                      <th>Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id}>
+                        <td style={{ fontFamily: 'monospace', color: '#94a3b8' }}>#{item.id}</td>
+                        <td style={{ fontWeight: 600 }}>{item.title}</td>
+                        <td>
+                          <span className="tag-badge">{item.category || 'General'}</span>
+                        </td>
+                        <td>
+                          <span className={`chaos-badge ${getChaosClass(item.chaos_rating)}`}>
+                            {item.chaos_rating || 'Mild 🌶️'}
+                          </span>
+                        </td>
+                        <td style={{ color: '#cbd5e1', maxWidth: '240px' }}>
+                          {item.description || <span style={{ color: '#64748b' }}>—</span>}
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : 'Just now'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+
+          {/* Tab 2: Developer Vibe Wall */}
+          {activeTab === 'vibes' && (
+            vibes.length === 0 ? (
+              <div className="empty-state">
+                <Coffee size={40} className="empty-icon" />
+                <p>No developer vibes logged yet.</p>
+                <span className="card-subtitle">Submit the form to log your first hype entry!</span>
+              </div>
+            ) : (
+              <div className="vibe-card-grid">
+                {vibes.map((v) => (
+                  <div key={v.id} className="vibe-card">
+                    <div className="vibe-card-header">
+                      <div className="vibe-coder-info">
+                        <span className="vibe-coder-name">{v.coder_name}</span>
+                      </div>
+                      <span className="vibe-status-tag">{v.vibe_status}</span>
+                    </div>
+
+                    <div className="snack-tag">
+                      <Utensils size={12} />
+                      <span>{v.snack_fuel || 'Coffee & Code'}</span>
+                    </div>
+
+                    {v.hype_quote && (
+                      <div className="vibe-quote">
+                        "{v.hype_quote}"
+                      </div>
+                    )}
+
+                    <div className="vibe-item-ref">
+                      <span>🔗 Task: <strong>{v.item_title || `#${v.item_id || 'N/A'}`}</strong></span>
+                      <small>{v.logged_at ? new Date(v.logged_at).toLocaleTimeString() : 'Just now'}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </section>
       </main>
 
-      {/* Schema Inspector & Teammate Feature Work Section */}
+      {/* Schema Inspector Section */}
       <section className="collapsible-card">
         <div className="card-header">
           <div className="card-title-group">
@@ -355,9 +611,9 @@ export default function App() {
               <GitBranch size={20} />
             </div>
             <div>
-              <h2 className="card-title">Live Schema & Migration Inspector</h2>
+              <h2 className="card-title">Live Schema &amp; Migration Inspector</h2>
               <span className="card-subtitle">
-                Inspect database tables and columns dynamically as teammates apply new migrations
+                Inspect database tables and columns dynamically as migrations are applied
               </span>
             </div>
           </div>
@@ -369,12 +625,19 @@ export default function App() {
             <div className="schema-pill-list">
               {dbInfo?.tables && dbInfo.tables.length > 0 ? (
                 dbInfo.tables.map((tbl) => (
-                  <span key={tbl} className="schema-pill">
-                    📁 {tbl}
+                  <span
+                    key={tbl}
+                    className="schema-pill"
+                    style={tbl === 'developer_vibes' ? { borderColor: '#c084fc', color: '#e9d5ff' } : {}}
+                  >
+                    📁 {tbl} {tbl === 'developer_vibes' ? '✨ [New]' : ''}
                   </span>
                 ))
               ) : (
-                <span className="schema-pill">items</span>
+                <>
+                  <span className="schema-pill">📁 items</span>
+                  <span className="schema-pill" style={{ borderColor: '#c084fc', color: '#e9d5ff' }}>📁 developer_vibes ✨ [New]</span>
+                </>
               )}
             </div>
           </div>
@@ -384,8 +647,13 @@ export default function App() {
             <div className="schema-pill-list">
               {dbInfo?.itemsColumns && dbInfo.itemsColumns.length > 0 ? (
                 dbInfo.itemsColumns.map((col) => (
-                  <span key={col.field} className="schema-pill">
+                  <span
+                    key={col.field}
+                    className="schema-pill"
+                    style={col.field === 'chaos_rating' ? { borderColor: '#f97316', color: '#fed7aa' } : {}}
+                  >
                     {col.field} <small style={{ color: '#94a3b8' }}>({col.type})</small>
+                    {col.field === 'chaos_rating' ? ' ✨ [New]' : ''}
                   </span>
                 ))
               ) : (
@@ -393,6 +661,7 @@ export default function App() {
                   <span className="schema-pill">id</span>
                   <span className="schema-pill">title</span>
                   <span className="schema-pill">category</span>
+                  <span className="schema-pill" style={{ borderColor: '#f97316', color: '#fed7aa' }}>chaos_rating ✨ [New]</span>
                   <span className="schema-pill">description</span>
                   <span className="schema-pill">created_at</span>
                 </>
@@ -410,7 +679,11 @@ export default function App() {
                   </span>
                 ))
               ) : (
-                <span className="schema-pill">001_initial_schema.sql</span>
+                <>
+                  <span className="schema-pill">✅ 001_initial_schema.sql</span>
+                  <span className="schema-pill">✅ 002_create_developer_vibes_table.sql</span>
+                  <span className="schema-pill">✅ 003_add_chaos_rating_to_items.sql</span>
+                </>
               )}
             </div>
           </div>
