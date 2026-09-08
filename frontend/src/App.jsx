@@ -30,6 +30,8 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Frontend');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [extractedText, setExtractedText] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -103,6 +105,8 @@ export default function App() {
           title: title.trim(),
           category,
           description: description.trim(),
+          location: location.trim(),
+          extractedText: extractedText.trim(),
         }),
       });
 
@@ -114,6 +118,8 @@ export default function App() {
       showToast(`Row #${result.data.id} inserted successfully into MySQL!`, 'success');
       setTitle('');
       setDescription('');
+      setLocation('');
+      setExtractedText('');
       fetchItems();
       fetchDbInfo();
     } catch (err) {
@@ -245,6 +251,29 @@ export default function App() {
                 placeholder="Add details, notes, or teammate attribution..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="item-location">Location</label>
+              <input
+                id="item-location"
+                type="text"
+                className="form-input"
+                placeholder="e.g. State Archives, Box 12"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="item-text">Transcribed / Extracted Text</label>
+              <textarea
+                id="item-text"
+                className="form-textarea"
+                placeholder="Paste or type the document's text content..."
+                value={extractedText}
+                onChange={(e) => setExtractedText(e.target.value)}
               />
             </div>
 
