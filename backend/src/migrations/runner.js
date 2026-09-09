@@ -57,7 +57,25 @@ export async function runMigrations() {
       await connection.beginTransaction();
       try {
         for (const statement of statements) {
-          await connection.query(statement);
+          try {
+            await connection.query(statement);
+          } catch (stmtErr) {
+            // Idempotency: handle duplicate column, table, or key gracefully if already created
+            if (
+              stmtErr.code === 'ER_DUP_FIELDNAME' ||
+              stmtErr.errno === 1060 ||
+              stmtErr.code === 'ER_TABLE_EXISTS_ERROR' ||
+              stmtErr.errno === 1050 ||
+              stmtErr.code === 'ER_DUP_KEYNAME' ||
+              stmtErr.errno === 1061
+            ) {
+              console.warn(
+                `ℹ️ Schema already satisfies statement in ${file} (${stmtErr.message}). Continuing.`
+              );
+            } else {
+              throw stmtErr;
+            }
+          }
         }
         await connection.query('INSERT INTO _migrations (name) VALUES (?)', [file]);
         await connection.commit();

@@ -3,29 +3,91 @@ import pool from '../config/db.js';
 
 const router = express.Router();
 
-// GET /api/items - Retrieve all records from main `items` table
+// GET /api/items - Retrieve all records from main `items` table (with extracted text if available)
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM items ORDER BY created_at DESC');
+    const [rows] = await pool.query(`
+      SELECT 
+        i.*,
+        dt.extracted_text
+      FROM items i
+      LEFT JOIN document_text dt ON dt.item_id = i.id
+      ORDER BY i.created_at DESC
+    `);
     res.json({
       success: true,
       count: rows.length,
       data: rows,
     });
   } catch (error) {
-    console.error('Error fetching items:', error);
+    // Fallback if document_text table is not yet created
+    try {
+      const [rows] = await pool.query('SELECT * FROM items ORDER BY created_at DESC');
+      res.json({
+        success: true,
+        count: rows.length,
+        data: rows,
+      });
+    } catch (fallbackError) {
+      console.error('Error fetching items:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve items from database',
+        details: error.message,
+      });
+    }
+  }
+});
+
+// GET /api/items/vibes - Retrieve developer vibe logs with associated item information
+router.get('/vibes', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        v.id,
+        v.coder_name,
+        v.vibe_status,
+        v.snack_fuel,
+        v.hype_quote,
+        v.item_id,
+        v.logged_at,
+        i.title AS item_title,
+        i.category AS item_category,
+        i.chaos_rating,
+        i.location
+      FROM developer_vibes v
+      LEFT JOIN items i ON v.item_id = i.id
+      ORDER BY v.logged_at DESC
+    `);
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    console.error('Error fetching developer vibes:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve items from database',
+      error: 'Failed to retrieve developer vibes from database',
       details: error.message,
     });
   }
 });
 
-// POST /api/items - Insert a new record into `items` and, when text is
-// provided, a matching row into `document_text`
+// POST /api/items - Insert record into `items`, `document_text`, and `developer_vibes`
 router.post('/', async (req, res) => {
-  const { title, description, category, location, extractedText } = req.body;
+  const {
+    title,
+    description,
+    category,
+    location,
+    extractedText,
+    chaos_rating,
+    coder_name,
+    vibe_status,
+    snack_fuel,
+    hype_quote,
+  } = req.body;
 
   if (!title || typeof title !== 'string' || title.trim() === '') {
     return res.status(400).json({
@@ -38,6 +100,7 @@ router.post('/', async (req, res) => {
   const itemDescription = description ? String(description).trim() : '';
   const itemCategory = category ? String(category).trim() : 'General';
   const itemLocation = location ? String(location).trim() : 'Unknown';
+  const itemChaos = chaos_rating ? String(chaos_rating).trim() : 'Mild 🌶️';
   const itemText = extractedText ? String(extractedText).trim() : '';
 
   const connection = await pool.getConnection();
@@ -45,36 +108,57 @@ router.post('/', async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const [result] = await connection.query(
-      'INSERT INTO items (title, description, category, location) VALUES (?, ?, ?, ?)',
-      [itemTitle, itemDescription, itemCategory, itemLocation]
+    // 1. Insert into main `items` table
+    const [itemResult] = await connection.query(
+      'INSERT INTO items (title, description, category, location, chaos_rating) VALUES (?, ?, ?, ?, ?)',
+      [itemTitle, itemDescription, itemCategory, itemLocation, itemChaos]
     );
 
+    const insertedItemId = itemResult.insertId;
+
+    // 2. Insert into `document_text` table if text provided
     if (itemText !== '') {
       await connection.query(
         'INSERT INTO document_text (item_id, extracted_text) VALUES (?, ?)',
-        [result.insertId, itemText]
+        [insertedItemId, itemText]
       );
     }
 
-    const [insertedRows] = await connection.query('SELECT * FROM items WHERE id = ?', [
-      result.insertId,
-    ]);
+    // 3. Insert into `developer_vibes` table
+    const authorName = coder_name && String(coder_name).trim() ? String(coder_name).trim() : 'Joseph Sackitey';
+    const vibeStatusVal = vibe_status && String(vibe_status).trim() ? String(vibe_status).trim() : '🚀 Hype Train';
+    const snack = snack_fuel && String(snack_fuel).trim() ? String(snack_fuel).trim() : '☕ Coffee & Code';
+    const quote = hype_quote && String(hype_quote).trim() ? String(hype_quote).trim() : `Shipped: ${itemTitle}`;
+
+    const [vibeResult] = await connection.query(
+      'INSERT INTO developer_vibes (coder_name, vibe_status, snack_fuel, hype_quote, item_id) VALUES (?, ?, ?, ?, ?)',
+      [authorName, vibeStatusVal, snack, quote, insertedItemId]
+    );
+
+    const [insertedItems] = await connection.query('SELECT * FROM items WHERE id = ?', [insertedItemId]);
+    const [insertedVibes] = await connection.query('SELECT * FROM developer_vibes WHERE id = ?', [vibeResult.insertId]);
 
     await connection.commit();
 
+    const createdItem = insertedItems[0];
+    const createdVibe = insertedVibes[0] || null;
+
     res.status(201).json({
       success: true,
-      message: 'Item created successfully',
-      data: insertedRows[0],
-      extractedText: itemText,
+      message: 'Item and related records created successfully',
+      data: {
+        ...createdItem,
+        item: createdItem,
+        vibe: createdVibe,
+        extractedText: itemText,
+      },
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Error inserting item:', error);
+    console.error('Error inserting item and associated data:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to insert item into database',
+      error: 'Failed to insert data into database',
       details: error.message,
     });
   } finally {
