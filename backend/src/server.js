@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import itemsRouter from './routes/items.js';
 import pool from './config/db.js';
 import { runMigrations } from './migrations/runner.js';
+import locationsRouter from './routes/location.js';
 
 dotenv.config();
 
@@ -88,6 +89,8 @@ app.get('/api/info', async (req, res) => {
 
 // Mount Routes
 app.use('/api/items', itemsRouter);
+
+app.use('/api/locations', locationsRouter);
 
 // 404 Handler
 app.use((req, res) => {

@@ -31,6 +31,10 @@ export default function App() {
   const [category, setCategory] = useState('Frontend');
   const [description, setDescription] = useState('');
 
+  // Location Feature Form State
+  const [location, setLocation] = useState('');
+  const [locationDescription, setLocationDescription] = useState('');
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -93,6 +97,45 @@ export default function App() {
       showToast('Please enter an item title.', 'error');
       return;
     }
+
+    const handleLocationSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!location.trim()) {
+    showToast('Please enter a location.', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/locations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        location: location.trim(),
+        locationDescription: locationDescription.trim(),
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    showToast('Location saved successfully!', 'success');
+
+    setLocation('');
+    setLocationDescription('');
+
+    fetchItems();
+    fetchDbInfo();
+
+  } catch (err) {
+    showToast(`Location insert failed: ${err.message}`, 'error');
+  }
+};
 
     setSubmitting(true);
     try {
@@ -346,6 +389,59 @@ export default function App() {
           )}
         </section>
       </main>
+
+      {/* Location Feature */}
+      <section className="card">
+        <div className="card-header">
+          <div className="card-title-group">
+            <div className="card-icon">
+              <PlusCircle size={20} />
+            </div>
+            <div>
+              <h2 className="card-title">Add Location</h2>
+              <span className="card-subtitle">
+                Enter location information
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <form className="item-form" onSubmit={handleLocationSubmit}>
+          <div className="form-group">
+            <label htmlFor="location">Location</label>
+            <input
+              id="location"
+              type="text"
+              className="form-input"
+              placeholder="Enter a location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="location-description">
+              Location Description
+            </label>
+            <input
+              id="location-description"
+              type="text"
+              className="form-input"
+              placeholder="Describe the location"
+              value={locationDescription}
+              onChange={(e) => setLocationDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn-primary">
+              <PlusCircle size={16} />
+              Save Location
+            </button>
+          </div>
+        </form>
+      </section>
+
 
       {/* Schema Inspector & Teammate Feature Work Section */}
       <section className="collapsible-card">
