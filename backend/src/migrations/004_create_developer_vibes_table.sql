@@ -1,4 +1,4 @@
--- 002_create_developer_vibes_table.sql
+-- 004_create_developer_vibes_table.sql
 -- CS 440 Migration: Create developer_vibes table for team hype, vibes, and snack fuel tracking
 
 CREATE TABLE IF NOT EXISTS developer_vibes (

@@ -17,7 +17,9 @@ import {
   Zap,
   Rocket,
   MessageSquareQuote,
-  Utensils
+  Utensils,
+  MapPin,
+  FileText
 } from 'lucide-react';
 import './App.css';
 
@@ -38,7 +40,9 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Frontend');
   const [chaosRating, setChaosRating] = useState('Mild 🌶️');
+  const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [extractedText, setExtractedText] = useState('');
 
   // Team Member Vibe Station Form State (developer_vibes table)
   const [coderName, setCoderName] = useState('Joseph Sackitey');
@@ -133,7 +137,9 @@ export default function App() {
           title: title.trim(),
           category,
           chaos_rating: chaosRating,
+          location: location.trim(),
           description: description.trim(),
+          extractedText: extractedText.trim(),
           coder_name: coderName.trim(),
           vibe_status: vibeStatus,
           snack_fuel: snackFuel.trim(),
@@ -146,9 +152,12 @@ export default function App() {
         throw new Error(result.error || `HTTP ${res.status}`);
       }
 
-      showToast(`🚀 Item #${result.data.item.id} & Vibe Log saved to MySQL!`, 'success');
+      const itemId = result.data?.item?.id || result.data?.id || 'New';
+      showToast(`🚀 Item #${itemId} & Vibe Log saved to MySQL!`, 'success');
       setTitle('');
       setDescription('');
+      setLocation('');
+      setExtractedText('');
       fetchItems();
       fetchVibes();
       fetchDbInfo();
@@ -165,41 +174,49 @@ export default function App() {
         title: 'Zero Downtime MySQL Migration',
         category: 'Database',
         chaos: 'Spicy 🌶️🌶️',
-        desc: 'Added developer_vibes table and chaos rating with automated rollback support.',
+        loc: 'AWS us-east-1 / Gettysburg Lab',
+        desc: 'Added developer_vibes, document_text, chaos_rating, and location support with automated rollback.',
+        text: 'MIGRATION LOG: 001_initial_schema.sql -> 002_create_document_text_table.sql -> 003_add_location_column_to_items.sql -> 004_create_developer_vibes_table.sql -> 005_add_chaos_rating_to_items.sql applied seamlessly.',
         coder: 'Joseph Sackitey',
         vibe: '🚀 Hype Train',
         snack: '🧋 Boba Milk Tea & Pocky',
         quote: 'Migrations ran in 42ms. Pure magic!'
       },
       {
+        title: 'Document Digitization & OCR Pipeline',
+        category: 'Backend',
+        chaos: 'Mild 🌶️',
+        loc: 'State Archives, Box 12',
+        desc: 'Extracting historical manuscripts and storing fulltext indexes in document_text table.',
+        text: 'Transcribed excerpt: "Collaborative cloud systems enable rapid parallel engineering with automated migrations and microservice telemetry."',
+        coder: 'Heidi & Joseph',
+        vibe: '✨ Cloud Wizard',
+        snack: '☕ Cold Brew & Croissants',
+        quote: 'Full-text indexing with MySQL FULLTEXT search enabled!'
+      },
+      {
         title: 'Auto-Scaling Express Backend on Railway',
         category: 'DevOps',
         chaos: 'Absolute Mayhem 💥',
-        desc: 'Provisioned container replicas under traffic spikes.',
+        loc: 'Production Cluster node-alpha',
+        desc: 'Provisioned container replicas under high query concurrency.',
+        text: 'DOCKER CONTAINER TELEMETRY: Container healthy, listening on 0.0.0.0:5001, pool connections: active.',
         coder: 'Captain Cloud',
         vibe: '☕ Pure Caffeine',
         snack: '⚡ Monster Energy & Doritos',
-        quote: 'No 502 Bad Gateways on my watch!'
+        quote: 'Zero 502 Bad Gateways on my watch!'
       },
       {
         title: 'Modern Glassmorphic React Dashboard',
         category: 'Frontend',
         chaos: 'Zen 🧘',
-        desc: 'Crafted responsive tabs, lively badges, and real-time schema inspector.',
+        loc: 'Client Browser WebApp',
+        desc: 'Crafted responsive tabs, lively badges, schema inspector, and multi-table support.',
+        text: 'UI SPECS: Accessible semantic markup, real-time database heartbeat, and fluid tab animations.',
         coder: 'Joseph Sackitey',
         vibe: '✨ Cloud Wizard',
         snack: '🍕 Cold Pizza & Cold Brew',
         quote: 'Clean CSS and zero layout shifts.'
-      },
-      {
-        title: 'Debugging Race Condition at 3 AM',
-        category: 'Backend',
-        chaos: 'Production Danger ☢️',
-        desc: 'Traced connection pool deadlock in async transaction wrapper.',
-        coder: 'Midnight Hacker',
-        vibe: '💀 3 AM Panic',
-        snack: '🍫 Dark Chocolate & Tears',
-        quote: 'It worked in production, please do not touch anything.'
       }
     ];
 
@@ -207,7 +224,9 @@ export default function App() {
     setTitle(picked.title);
     setCategory(picked.category);
     setChaosRating(picked.chaos);
+    setLocation(picked.loc);
     setDescription(picked.desc);
+    setExtractedText(picked.text);
     setCoderName(picked.coder);
     setVibeStatus(picked.vibe);
     setSnackFuel(picked.snack);
@@ -245,7 +264,7 @@ export default function App() {
               Cloud <span>Collaborative Development</span>
             </h1>
             <p className="hero-subtitle">
-              Full-Stack Application with React, Node/Express, MySQL, Automated Migrations, & Developer Hype Station.
+              Full-Stack Application with React, Node/Express, MySQL, Automated Migrations, Multi-Table Schemas &amp; Developer Hype Station.
             </p>
           </div>
 
@@ -272,7 +291,7 @@ export default function App() {
           </div>
           <div className="meta-item">
             <Layers size={16} />
-            <span>Tables in DB: <strong>{dbInfo?.tables?.length ?? '2'}</strong></span>
+            <span>Tables in DB: <strong>{dbInfo?.tables?.length ?? '4'}</strong></span>
           </div>
           <div className="meta-item">
             <Zap size={16} />
@@ -291,9 +310,9 @@ export default function App() {
                 <PlusCircle size={20} />
               </div>
               <div>
-                <h2 className="card-title">Insert Record & Log Vibe</h2>
+                <h2 className="card-title">Insert Record &amp; Log Vibe</h2>
                 <span className="card-subtitle">
-                  Saves to <code>items</code> &amp; <code>developer_vibes</code> tables
+                  Saves to <code>items</code>, <code>document_text</code> &amp; <code>developer_vibes</code>
                 </span>
               </div>
             </div>
@@ -336,7 +355,7 @@ export default function App() {
               <div className="form-group">
                 <label htmlFor="item-chaos">
                   <span>Chaos Rating</span>
-                  <small style={{ color: '#c084fc' }}>+New Column</small>
+                  <small style={{ color: '#c084fc' }}>+Col 005</small>
                 </label>
                 <select
                   id="item-chaos"
@@ -354,6 +373,21 @@ export default function App() {
             </div>
 
             <div className="form-group">
+              <label htmlFor="item-location">
+                <span>Location</span>
+                <small style={{ color: '#38bdf8' }}>+Col 003</small>
+              </label>
+              <input
+                id="item-location"
+                type="text"
+                className="form-input"
+                placeholder="e.g. State Archives, Box 12 / AWS us-east-1"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="item-desc">Description / Notes</label>
               <textarea
                 id="item-desc"
@@ -361,6 +395,20 @@ export default function App() {
                 placeholder="Add implementation notes, architecture details..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="item-text">
+                <span>Transcribed / Extracted Text</span>
+                <small style={{ color: '#34d399' }}>+Table <code>document_text</code></small>
+              </label>
+              <textarea
+                id="item-text"
+                className="form-textarea"
+                placeholder="Paste or type document text content or OCR extract..."
+                value={extractedText}
+                onChange={(e) => setExtractedText(e.target.value)}
               />
             </div>
 
@@ -439,7 +487,7 @@ export default function App() {
               <button type="submit" className="btn-primary" disabled={submitting}>
                 {submitting ? (
                   <>
-                    <RefreshCw size={16} className="animate-spin" /> Saving Dual Records...
+                    <RefreshCw size={16} className="animate-spin" /> Saving Multi-Table Records...
                   </>
                 ) : (
                   <>
@@ -453,7 +501,7 @@ export default function App() {
                 className="btn-secondary"
                 onClick={handleFillSample}
               >
-                <Sparkles size={14} /> 🎲 Random Vibe &amp; Snack Preset
+                <Sparkles size={14} /> 🎲 Random Multi-Feature Preset
               </button>
             </div>
           </form>
@@ -529,8 +577,9 @@ export default function App() {
                       <th>ID</th>
                       <th>Title</th>
                       <th>Category</th>
+                      <th>Location</th>
                       <th>Chaos Level</th>
-                      <th>Description</th>
+                      <th>Description / Text</th>
                       <th>Created</th>
                     </tr>
                   </thead>
@@ -538,16 +587,29 @@ export default function App() {
                     {items.map((item) => (
                       <tr key={item.id}>
                         <td style={{ fontFamily: 'monospace', color: '#94a3b8' }}>#{item.id}</td>
-                        <td style={{ fontWeight: 600 }}>{item.title}</td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{item.title}</div>
+                          {item.extracted_text && (
+                            <div style={{ fontSize: '0.78rem', color: '#6ee7b7', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <FileText size={12} /> {item.extracted_text.slice(0, 45)}
+                              {item.extracted_text.length > 45 ? '...' : ''}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <span className="tag-badge">{item.category || 'General'}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '0.82rem', color: '#93c5fd', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <MapPin size={12} /> {item.location || 'Unknown'}
+                          </span>
                         </td>
                         <td>
                           <span className={`chaos-badge ${getChaosClass(item.chaos_rating)}`}>
                             {item.chaos_rating || 'Mild 🌶️'}
                           </span>
                         </td>
-                        <td style={{ color: '#cbd5e1', maxWidth: '240px' }}>
+                        <td style={{ color: '#cbd5e1', maxWidth: '220px', fontSize: '0.85rem' }}>
                           {item.description || <span style={{ color: '#64748b' }}>—</span>}
                         </td>
                         <td style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
@@ -628,15 +690,23 @@ export default function App() {
                   <span
                     key={tbl}
                     className="schema-pill"
-                    style={tbl === 'developer_vibes' ? { borderColor: '#c084fc', color: '#e9d5ff' } : {}}
+                    style={
+                      tbl === 'developer_vibes'
+                        ? { borderColor: '#c084fc', color: '#e9d5ff' }
+                        : tbl === 'document_text'
+                        ? { borderColor: '#34d399', color: '#a7f3d0' }
+                        : {}
+                    }
                   >
-                    📁 {tbl} {tbl === 'developer_vibes' ? '✨ [New]' : ''}
+                    📁 {tbl} {tbl === 'developer_vibes' || tbl === 'document_text' ? '✨ [New]' : ''}
                   </span>
                 ))
               ) : (
                 <>
                   <span className="schema-pill">📁 items</span>
+                  <span className="schema-pill" style={{ borderColor: '#34d399', color: '#a7f3d0' }}>📁 document_text ✨ [New]</span>
                   <span className="schema-pill" style={{ borderColor: '#c084fc', color: '#e9d5ff' }}>📁 developer_vibes ✨ [New]</span>
+                  <span className="schema-pill">📁 _migrations</span>
                 </>
               )}
             </div>
@@ -650,10 +720,16 @@ export default function App() {
                   <span
                     key={col.field}
                     className="schema-pill"
-                    style={col.field === 'chaos_rating' ? { borderColor: '#f97316', color: '#fed7aa' } : {}}
+                    style={
+                      col.field === 'chaos_rating'
+                        ? { borderColor: '#f97316', color: '#fed7aa' }
+                        : col.field === 'location'
+                        ? { borderColor: '#38bdf8', color: '#bae6fd' }
+                        : {}
+                    }
                   >
                     {col.field} <small style={{ color: '#94a3b8' }}>({col.type})</small>
-                    {col.field === 'chaos_rating' ? ' ✨ [New]' : ''}
+                    {col.field === 'chaos_rating' || col.field === 'location' ? ' ✨ [New]' : ''}
                   </span>
                 ))
               ) : (
@@ -661,6 +737,7 @@ export default function App() {
                   <span className="schema-pill">id</span>
                   <span className="schema-pill">title</span>
                   <span className="schema-pill">category</span>
+                  <span className="schema-pill" style={{ borderColor: '#38bdf8', color: '#bae6fd' }}>location ✨ [New]</span>
                   <span className="schema-pill" style={{ borderColor: '#f97316', color: '#fed7aa' }}>chaos_rating ✨ [New]</span>
                   <span className="schema-pill">description</span>
                   <span className="schema-pill">created_at</span>
@@ -681,8 +758,10 @@ export default function App() {
               ) : (
                 <>
                   <span className="schema-pill">✅ 001_initial_schema.sql</span>
-                  <span className="schema-pill">✅ 002_create_developer_vibes_table.sql</span>
-                  <span className="schema-pill">✅ 003_add_chaos_rating_to_items.sql</span>
+                  <span className="schema-pill">✅ 002_create_document_text_table.sql</span>
+                  <span className="schema-pill">✅ 003_add_location_column_to_items.sql</span>
+                  <span className="schema-pill">✅ 004_create_developer_vibes_table.sql</span>
+                  <span className="schema-pill">✅ 005_add_chaos_rating_to_items.sql</span>
                 </>
               )}
             </div>
