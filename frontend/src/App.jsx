@@ -263,9 +263,6 @@ export default function App() {
             <h1 className="hero-title">
               Cloud <span>Collaborative Development</span>
             </h1>
-            <p className="hero-subtitle">
-              Full-Stack Application with React, Node/Express, MySQL, Automated Migrations, Multi-Table Schemas &amp; Developer Hype Station.
-            </p>
           </div>
 
           <div className="status-pill">
