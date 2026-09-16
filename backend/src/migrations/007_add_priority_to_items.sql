@@ -1,0 +1,1 @@
+ALTER TABLE items ADD COLUMN priority VARCHAR(50) NOT NULL DEFAULT 'Medium';

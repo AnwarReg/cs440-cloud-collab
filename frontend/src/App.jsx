@@ -19,7 +19,9 @@ import {
   MessageSquareQuote,
   Utensils,
   MapPin,
-  FileText
+  FileText,
+  Star,
+  ClipboardList
 } from 'lucide-react';
 import './App.css';
 
@@ -29,7 +31,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 export default function App() {
   const [items, setItems] = useState([]);
   const [vibes, setVibes] = useState([]);
-  const [activeTab, setActiveTab] = useState('items'); // 'items' | 'vibes'
+  const [reviews, setReviews] = useState([]);
+  const [activeTab, setActiveTab] = useState('items'); // 'items' | 'vibes' | 'reviews'
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [health, setHealth] = useState({ status: 'connecting', database: 'checking...' });
@@ -49,6 +52,12 @@ export default function App() {
   const [vibeStatus, setVibeStatus] = useState('🚀 Hype Train');
   const [snackFuel, setSnackFuel] = useState('☕ Cold Brew & Gummy Bears');
   const [hypeQuote, setHypeQuote] = useState('It worked on my machine, shipping to prod!');
+
+  // Damian Code Review Form State (damian_reviews table) + priority column on items
+  const [priority, setPriority] = useState('Medium');
+  const [reviewerName, setReviewerName] = useState('Damian');
+  const [reviewStatus, setReviewStatus] = useState('Pending');
+  const [reviewFeedback, setReviewFeedback] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -108,11 +117,26 @@ export default function App() {
     }
   };
 
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/items/reviews`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setReviews(result.data || []);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load reviews:', err.message);
+    }
+  };
+
   useEffect(() => {
     fetchHealth();
     fetchDbInfo();
     fetchItems();
     fetchVibes();
+    fetchReviews();
 
     // Heartbeat check every 15 seconds
     const interval = setInterval(() => {
@@ -137,6 +161,7 @@ export default function App() {
           title: title.trim(),
           category,
           chaos_rating: chaosRating,
+          priority,
           location: location.trim(),
           description: description.trim(),
           extractedText: extractedText.trim(),
@@ -144,6 +169,9 @@ export default function App() {
           vibe_status: vibeStatus,
           snack_fuel: snackFuel.trim(),
           hype_quote: hypeQuote.trim(),
+          reviewer_name: reviewerName.trim(),
+          review_status: reviewStatus,
+          feedback: reviewFeedback.trim(),
         }),
       });
 
@@ -153,13 +181,15 @@ export default function App() {
       }
 
       const itemId = result.data?.item?.id || result.data?.id || 'New';
-      showToast(`🚀 Item #${itemId} & Vibe Log saved to MySQL!`, 'success');
+      showToast(`🚀 Item #${itemId} saved to items, vibes & reviews!`, 'success');
       setTitle('');
       setDescription('');
       setLocation('');
       setExtractedText('');
+      setReviewFeedback('');
       fetchItems();
       fetchVibes();
+      fetchReviews();
       fetchDbInfo();
     } catch (err) {
       showToast(`Insert failed: ${err.message}`, 'error');
@@ -309,7 +339,7 @@ export default function App() {
               <div>
                 <h2 className="card-title">Insert Record &amp; Log Vibe</h2>
                 <span className="card-subtitle">
-                  Saves to <code>items</code>, <code>document_text</code> &amp; <code>developer_vibes</code>
+                  Saves to <code>items</code>, <code>document_text</code>, <code>developer_vibes</code> &amp; <code>damian_reviews</code>
                 </span>
               </div>
             </div>
@@ -367,6 +397,24 @@ export default function App() {
                   <option value="Production Danger ☢️">Production Danger ☢️</option>
                 </select>
               </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="item-priority">
+                <span>Priority</span>
+                <small style={{ color: '#fb923c' }}>+Col 007</small>
+              </label>
+              <select
+                id="item-priority"
+                className="form-select"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
             </div>
 
             <div className="form-group">
@@ -480,6 +528,59 @@ export default function App() {
               </div>
             </div>
 
+            {/* Damian Code Review Subsection (damian_reviews table) */}
+            <div className="vibe-form-box" style={{ borderColor: 'rgba(251, 146, 60, 0.35)', background: 'rgba(251, 146, 60, 0.05)' }}>
+              <div className="vibe-form-title" style={{ color: '#fb923c' }}>
+                <Star size={16} /> Code Review Log
+                <small style={{ marginLeft: 'auto', color: '#94a3b8', textTransform: 'none', fontWeight: 400 }}>
+                  (<code>damian_reviews</code> table)
+                </small>
+              </div>
+
+              <div className="vibe-grid-2">
+                <div className="form-group">
+                  <label htmlFor="review-name">Reviewer Name</label>
+                  <input
+                    id="review-name"
+                    type="text"
+                    className="form-input"
+                    value={reviewerName}
+                    onChange={(e) => setReviewerName(e.target.value)}
+                    placeholder="e.g. Damian"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="review-status">Review Status</label>
+                  <select
+                    id="review-status"
+                    className="form-select"
+                    value={reviewStatus}
+                    onChange={(e) => setReviewStatus(e.target.value)}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Needs Work">Needs Work</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="review-feedback">
+                  <span>Review Feedback</span>
+                  <ClipboardList size={14} style={{ color: '#fb923c' }} />
+                </label>
+                <textarea
+                  id="review-feedback"
+                  className="form-textarea"
+                  value={reviewFeedback}
+                  onChange={(e) => setReviewFeedback(e.target.value)}
+                  placeholder="e.g. Looks good, minor nit on error handling..."
+                />
+              </div>
+            </div>
+
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={submitting}>
                 {submitting ? (
@@ -530,6 +631,12 @@ export default function App() {
               >
                 ⚡ Vibe Wall ({vibes.length})
               </button>
+              <button
+                className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+                onClick={() => setActiveTab('reviews')}
+              >
+                ⭐ Reviews ({reviews.length})
+              </button>
             </div>
           </div>
 
@@ -537,13 +644,16 @@ export default function App() {
             <span className="count-badge">
               {activeTab === 'items'
                 ? `${items.length} ${items.length === 1 ? 'Item' : 'Items'} in MySQL`
-                : `${vibes.length} ${vibes.length === 1 ? 'Vibe' : 'Vibes'} in MySQL`}
+                : activeTab === 'vibes'
+                ? `${vibes.length} ${vibes.length === 1 ? 'Vibe' : 'Vibes'} in MySQL`
+                : `${reviews.length} ${reviews.length === 1 ? 'Review' : 'Reviews'} in MySQL`}
             </span>
             <button
               className="btn-secondary"
               onClick={() => {
                 fetchItems();
                 fetchVibes();
+                fetchReviews();
                 fetchDbInfo();
                 fetchHealth();
               }}
@@ -574,6 +684,7 @@ export default function App() {
                       <th>ID</th>
                       <th>Title</th>
                       <th>Category</th>
+                      <th>Priority</th>
                       <th>Location</th>
                       <th>Chaos Level</th>
                       <th>Description / Text</th>
@@ -595,6 +706,18 @@ export default function App() {
                         </td>
                         <td>
                           <span className="tag-badge">{item.category || 'General'}</span>
+                        </td>
+                        <td>
+                          <span style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '999px',
+                            background: item.priority === 'Critical' ? 'rgba(239,68,68,0.15)' : item.priority === 'High' ? 'rgba(251,146,60,0.15)' : item.priority === 'Low' ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.15)',
+                            color: item.priority === 'Critical' ? '#f87171' : item.priority === 'High' ? '#fb923c' : item.priority === 'Low' ? '#34d399' : '#94a3b8',
+                          }}>
+                            {item.priority || 'Medium'}
+                          </span>
                         </td>
                         <td>
                           <span style={{ fontSize: '0.82rem', color: '#93c5fd', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -659,6 +782,56 @@ export default function App() {
               </div>
             )
           )}
+
+          {/* Tab 3: Damian Code Reviews */}
+          {activeTab === 'reviews' && (
+            reviews.length === 0 ? (
+              <div className="empty-state">
+                <Star size={40} className="empty-icon" />
+                <p>No code reviews logged yet.</p>
+                <span className="card-subtitle">Submit the form to log your first review!</span>
+              </div>
+            ) : (
+              <div className="vibe-card-grid">
+                {reviews.map((r) => (
+                  <div key={r.id} className="vibe-card" style={{ borderColor: 'rgba(251,146,60,0.25)' }}>
+                    <div className="vibe-card-header">
+                      <div className="vibe-coder-info">
+                        <span className="vibe-coder-name" style={{ color: '#fb923c' }}>{r.reviewer_name}</span>
+                      </div>
+                      <span
+                        className="vibe-status-tag"
+                        style={{
+                          background: r.review_status === 'Approved' ? 'rgba(52,211,153,0.15)' : r.review_status === 'Needs Work' ? 'rgba(251,191,36,0.15)' : r.review_status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(148,163,184,0.15)',
+                          color: r.review_status === 'Approved' ? '#34d399' : r.review_status === 'Needs Work' ? '#fbbf24' : r.review_status === 'Rejected' ? '#f87171' : '#94a3b8',
+                        }}
+                      >
+                        {r.review_status || 'Pending'}
+                      </span>
+                    </div>
+
+                    {r.feedback && (
+                      <div className="vibe-quote" style={{ borderLeftColor: '#fb923c' }}>
+                        "{r.feedback}"
+                      </div>
+                    )}
+
+                    <div className="vibe-item-ref">
+                      <span>🔗 Task: <strong>{r.item_title || `#${r.item_id || 'N/A'}`}</strong></span>
+                      {r.priority && (
+                        <span style={{ fontSize: '0.75rem', padding: '0.1rem 0.4rem', borderRadius: '999px', background: 'rgba(251,146,60,0.1)', color: '#fb923c' }}>
+                          {r.priority}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
+                      {r.reviewed_at ? new Date(r.reviewed_at).toLocaleTimeString() : 'Just now'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </section>
       </main>
 
@@ -688,14 +861,16 @@ export default function App() {
                     key={tbl}
                     className="schema-pill"
                     style={
-                      tbl === 'developer_vibes'
+                      tbl === 'damian_reviews'
+                        ? { borderColor: '#fb923c', color: '#fed7aa' }
+                        : tbl === 'developer_vibes'
                         ? { borderColor: '#c084fc', color: '#e9d5ff' }
                         : tbl === 'document_text'
                         ? { borderColor: '#34d399', color: '#a7f3d0' }
                         : {}
                     }
                   >
-                    📁 {tbl} {tbl === 'developer_vibes' || tbl === 'document_text' ? '✨ [New]' : ''}
+                    📁 {tbl} {tbl === 'damian_reviews' || tbl === 'developer_vibes' || tbl === 'document_text' ? '✨ [New]' : ''}
                   </span>
                 ))
               ) : (
@@ -703,6 +878,7 @@ export default function App() {
                   <span className="schema-pill">📁 items</span>
                   <span className="schema-pill" style={{ borderColor: '#34d399', color: '#a7f3d0' }}>📁 document_text ✨ [New]</span>
                   <span className="schema-pill" style={{ borderColor: '#c084fc', color: '#e9d5ff' }}>📁 developer_vibes ✨ [New]</span>
+                  <span className="schema-pill" style={{ borderColor: '#fb923c', color: '#fed7aa' }}>📁 damian_reviews ✨ [New]</span>
                   <span className="schema-pill">📁 _migrations</span>
                 </>
               )}
@@ -718,7 +894,9 @@ export default function App() {
                     key={col.field}
                     className="schema-pill"
                     style={
-                      col.field === 'chaos_rating'
+                      col.field === 'priority'
+                        ? { borderColor: '#fb923c', color: '#fed7aa' }
+                        : col.field === 'chaos_rating'
                         ? { borderColor: '#f97316', color: '#fed7aa' }
                         : col.field === 'location'
                         ? { borderColor: '#38bdf8', color: '#bae6fd' }
@@ -726,7 +904,7 @@ export default function App() {
                     }
                   >
                     {col.field} <small style={{ color: '#94a3b8' }}>({col.type})</small>
-                    {col.field === 'chaos_rating' || col.field === 'location' ? ' ✨ [New]' : ''}
+                    {col.field === 'priority' || col.field === 'chaos_rating' || col.field === 'location' ? ' ✨ [New]' : ''}
                   </span>
                 ))
               ) : (
@@ -736,6 +914,7 @@ export default function App() {
                   <span className="schema-pill">category</span>
                   <span className="schema-pill" style={{ borderColor: '#38bdf8', color: '#bae6fd' }}>location ✨ [New]</span>
                   <span className="schema-pill" style={{ borderColor: '#f97316', color: '#fed7aa' }}>chaos_rating ✨ [New]</span>
+                  <span className="schema-pill" style={{ borderColor: '#fb923c', color: '#fed7aa' }}>priority ✨ [New]</span>
                   <span className="schema-pill">description</span>
                   <span className="schema-pill">created_at</span>
                 </>
@@ -759,6 +938,8 @@ export default function App() {
                   <span className="schema-pill">✅ 003_add_location_column_to_items.sql</span>
                   <span className="schema-pill">✅ 004_create_developer_vibes_table.sql</span>
                   <span className="schema-pill">✅ 005_add_chaos_rating_to_items.sql</span>
+                  <span className="schema-pill" style={{ borderColor: 'rgba(251,146,60,0.4)' }}>✅ 006_create_damian_reviews_table.sql</span>
+                  <span className="schema-pill" style={{ borderColor: 'rgba(251,146,60,0.4)' }}>✅ 007_add_priority_to_items.sql</span>
                 </>
               )}
             </div>

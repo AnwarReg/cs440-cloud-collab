@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS damian_reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  item_id INT,
+  reviewer_name VARCHAR(100) NOT NULL DEFAULT 'Damian',
+  review_status VARCHAR(50) DEFAULT 'Pending',
+  feedback TEXT,
+  reviewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
