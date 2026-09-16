@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
       ? String(locationDescription).trim()
       : '';
 
-    // Insert into the main items table
+    // Insert into the items table with location
     const [itemResult] = await pool.query(
       `INSERT INTO items (title, description, category, location)
        VALUES (?, ?, ?, ?)`,
@@ -32,18 +32,6 @@ router.post('/', async (req, res) => {
     );
 
     const itemId = itemResult.insertId;
-
-    // Insert into the new locations table
-    await pool.query(
-      `INSERT INTO locations
-       (item_id, location, location_description)
-       VALUES (?, ?, ?)`,
-      [
-        itemId,
-        cleanLocation,
-        cleanDescription
-      ]
-    );
 
     res.status(201).json({
       success: true,
