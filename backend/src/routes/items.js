@@ -74,7 +74,40 @@ router.get('/vibes', async (req, res) => {
   }
 });
 
-// POST /api/items - Insert record into `items`, `document_text`, and `developer_vibes`
+// GET /api/items/reviews - Retrieve code reviews with associated item information
+router.get('/reviews', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        r.id,
+        r.reviewer_name,
+        r.review_status,
+        r.feedback,
+        r.item_id,
+        r.reviewed_at,
+        i.title AS item_title,
+        i.category AS item_category,
+        i.priority
+      FROM damian_reviews r
+      LEFT JOIN items i ON r.item_id = i.id
+      ORDER BY r.reviewed_at DESC
+    `);
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve reviews from database',
+      details: error.message,
+    });
+  }
+});
+
+// POST /api/items - Insert record into `items`, `document_text`, `developer_vibes`, and `damian_reviews`
 router.post('/', async (req, res) => {
   const {
     title,
@@ -83,10 +116,14 @@ router.post('/', async (req, res) => {
     location,
     extractedText,
     chaos_rating,
+    priority,
     coder_name,
     vibe_status,
     snack_fuel,
     hype_quote,
+    reviewer_name,
+    review_status,
+    feedback,
   } = req.body;
 
   if (!title || typeof title !== 'string' || title.trim() === '') {
@@ -101,6 +138,7 @@ router.post('/', async (req, res) => {
   const itemCategory = category ? String(category).trim() : 'General';
   const itemLocation = location ? String(location).trim() : 'Unknown';
   const itemChaos = chaos_rating ? String(chaos_rating).trim() : 'Mild 🌶️';
+  const itemPriority = priority ? String(priority).trim() : 'Medium';
   const itemText = extractedText ? String(extractedText).trim() : '';
 
   const connection = await pool.getConnection();
@@ -110,8 +148,8 @@ router.post('/', async (req, res) => {
 
     // 1. Insert into main `items` table
     const [itemResult] = await connection.query(
-      'INSERT INTO items (title, description, category, location, chaos_rating) VALUES (?, ?, ?, ?, ?)',
-      [itemTitle, itemDescription, itemCategory, itemLocation, itemChaos]
+      'INSERT INTO items (title, description, category, location, chaos_rating, priority) VALUES (?, ?, ?, ?, ?, ?)',
+      [itemTitle, itemDescription, itemCategory, itemLocation, itemChaos, itemPriority]
     );
 
     const insertedItemId = itemResult.insertId;
@@ -135,13 +173,25 @@ router.post('/', async (req, res) => {
       [authorName, vibeStatusVal, snack, quote, insertedItemId]
     );
 
+    // 4. Insert into `damian_reviews` table
+    const reviewerVal = reviewer_name && String(reviewer_name).trim() ? String(reviewer_name).trim() : 'Damian';
+    const statusVal = review_status && String(review_status).trim() ? String(review_status).trim() : 'Pending';
+    const feedbackVal = feedback && String(feedback).trim() ? String(feedback).trim() : '';
+
+    const [reviewResult] = await connection.query(
+      'INSERT INTO damian_reviews (item_id, reviewer_name, review_status, feedback) VALUES (?, ?, ?, ?)',
+      [insertedItemId, reviewerVal, statusVal, feedbackVal]
+    );
+
     const [insertedItems] = await connection.query('SELECT * FROM items WHERE id = ?', [insertedItemId]);
     const [insertedVibes] = await connection.query('SELECT * FROM developer_vibes WHERE id = ?', [vibeResult.insertId]);
+    const [insertedReviews] = await connection.query('SELECT * FROM damian_reviews WHERE id = ?', [reviewResult.insertId]);
 
     await connection.commit();
 
     const createdItem = insertedItems[0];
     const createdVibe = insertedVibes[0] || null;
+    const createdReview = insertedReviews[0] || null;
 
     res.status(201).json({
       success: true,
@@ -150,6 +200,7 @@ router.post('/', async (req, res) => {
         ...createdItem,
         item: createdItem,
         vibe: createdVibe,
+        review: createdReview,
         extractedText: itemText,
       },
     });
