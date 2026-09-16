@@ -91,51 +91,51 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleLocationSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!location.trim()) {
+      showToast('Please enter a location.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/locations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location: location.trim(),
+          locationDescription: locationDescription.trim(),
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || `HTTP ${res.status}`);
+      }
+
+      showToast('Location saved successfully!', 'success');
+
+      setLocation('');
+      setLocationDescription('');
+
+      fetchItems();
+      fetchDbInfo();
+
+    } catch (err) {
+      showToast(`Location insert failed: ${err.message}`, 'error');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       showToast('Please enter an item title.', 'error');
       return;
     }
-
-    const handleLocationSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!location.trim()) {
-    showToast('Please enter a location.', 'error');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/locations`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        location: location.trim(),
-        locationDescription: locationDescription.trim(),
-      }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok || !result.success) {
-      throw new Error(result.error || `HTTP ${res.status}`);
-    }
-
-    showToast('Location saved successfully!', 'success');
-
-    setLocation('');
-    setLocationDescription('');
-
-    fetchItems();
-    fetchDbInfo();
-
-  } catch (err) {
-    showToast(`Location insert failed: ${err.message}`, 'error');
-  }
-};
 
     setSubmitting(true);
     try {
